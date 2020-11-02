@@ -1,5 +1,26 @@
 import pickle
 import numpy as np
+from .utils import get_data_dir
+from sklearn.utils.extmath import randomized_svd
+
+def make_svd(font_prefix):    
+    svd_dir = get_data_dir() / "svd"
+    svd_path = svd_dir / f"svd_{font_prefix}.pkl"
+    
+    if svd_path.exists():
+        with svd_path.open("rb") as fin:
+            U, S, Vt = pickle.load(fin)
+        return (U, S, Vt)
+    else:
+        data_dir = get_data_dir()
+        with (data_dir / f"char_img/char_img_{font_prefix}.pkl").open("rb") as fin:
+            M = pickle.load(fin)
+        U, S, Vt = randomized_svd(M, n_components=500, random_state=3423)
+
+        with svd_path.open("wb") as fout:
+            pickle.dump((U, S, Vt), fout)
+            # print(f"dimensions: U({U.shape}), S({S.shape}), V({Vt.shape})")
+        return (U, S, Vt)
 
 class SvdUtils:
     def __init__(self, svd_path, k):

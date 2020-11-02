@@ -1,13 +1,22 @@
 import numpy as np
 
-class CharacterSpace:
-    def __init__(self, cv_itos, cv_stoi, cv_vectors, n_components=100):
-        self.n_components = n_components        
-        self.cv_dist, self.vectors = self.build_index(cv_vectors, n_components)
-        self.raw_vectors = cv_vectors
-        self.stoi = cv_stoi
-        self.itos = cv_itos                
+class FormSpace:
+    def __init__(self, label, n_components=100, svd_tuple=None, vocabs=None):
+        self.n_components = n_components
+        self.label = label
+        if svd_tuple and vocabs:
+            U, S, Vt = svd_tuple 
+            self.ec_bases = U[:,:n_components].dot(np.diag(S[:n_components]))            
+            coeff_mat = np.dot(np.diag(S), Vt).T                        
+            self.cv_dist, self.vectors = self.build_index(coeff_mat, n_components)
+            self.raw_vectors = coeff_mat
+            self.vocabs = vocabs
+            self.stoi = {x: i for i, x in enumerate(vocabs)}
+            self.itos = {i: x for i, x in enumerate(vocabs)}            
     
+    def __repr__(self):
+        return f"<FormSpace: {self.label}, {len(self.vocabs)} x {self.n_components}>"
+
     def get_ec_dim(self):
         return self.n_components
 
@@ -39,5 +48,12 @@ class CharacterSpace:
             return None
         chidx = self.stoi[char]
         return self.vectors[chidx, :]
+    
+    def recon(self, char=None, chidx=None):
+        if not char and not chidx:
+            raise ValueError("One of char and chidx must be not None")
+
+        if char:
+            chidx = self.xtoi[char]
 
 
