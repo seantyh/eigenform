@@ -1,0 +1,81 @@
+---
+title: "Eigenform"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+require(readr)
+require(mgcv)
+require(mgcViz)
+require(qgam)
+```
+
+## R Markdown
+
+
+```{r cars}
+data = read_csv("../../../data/norm/norm_space_ldt.csv")
+data$RTinv = -1000/data$RT
+data$c1_log_nNeigh = log(data$c1_nNeigh)
+data$c2_log_nNeigh = log(data$c2_nNeigh)
+```
+
+## Model
+
+```{r linear}
+m0 = lm(RTinv~c1_logfreq*c1_log_nNeigh + c2_logfreq*c2_log_nNeigh + nw_nNeigh, data=data)
+summary(m0)
+
+```
+```{r gam_model}
+m1 = bam(RTinv~te(c1_logfreq, c1_log_nNeigh)+te(c2_logfreq, c2_log_nNeigh)+s(nw_nNeigh), data=data)
+m2 = bam(RTinv~te(c1_logfreq, c1_log_nNeigh, k=3)+te(c2_logfreq, c2_log_nNeigh, k=3)+s(nw_nNeigh), data=data)
+```
+
+## Model Summary - M1
+```{r summary1}
+summary(m1)
+concurvity(m1)
+```
+
+## Model Summary - M2
+```{r summary2}
+summary(m2)
+concurvity(m2)
+```
+
+## Visualization M1
+```{r vis_1, fig.height=8, fig.width=12}
+vis.gam(m1, view=c("c1_logfreq", "c1_log_nNeigh"), 
+        plot.type="contour", color="topo", labcex=1.5)
+vis.gam(m1, view=c("c2_logfreq", "c2_log_nNeigh"), 
+        plot.type="contour", color="topo", labcex=1.5)
+plot(m1, select=1, rug=TRUE, labcex=1.5, levels=seq(-0.2,1,0.02))
+plot(m1, select=2, rug=TRUE, labcex=1.5, levels=seq(-0.2,1,0.02))
+plot(m1, select=3, rug=TRUE, labcex=1.5)
+```
+
+## Visualization M2
+```{r vis_2, fig.height=8, fig.width=12}
+vis.gam(m2, view=c("c1_logfreq", "c1_log_nNeigh"), 
+        plot.type="contour", color="topo", labcex=1.5)
+vis.gam(m2, view=c("c2_logfreq", "c2_log_nNeigh"), 
+        plot.type="contour", color="topo", labcex=1.5)
+plot(m2, select=1, rug=TRUE, labcex=1.5, levels=seq(-0.2,1,0.02))
+plot(m2, select=2, rug=TRUE, labcex=1.5, levels=seq(-0.2,1,0.02))
+plot(m2, select=3, rug=TRUE, labcex=1.5)
+```
+
+## QGAM
+```{r qgam, fig.height=8, fig.width=12}
+qns = c(0.25,0.5,0.75)
+mq2 = mqgam(RTinv~te(c1_logfreq, c1_nNeigh, k=3)
+            +te(c2_logfreq, c2_nNeigh, k=3)
+            +s(nw_nNeigh), data=data, qu=qns)
+par(mfrow=c(2, 3))
+v = sapply(qns, function(q){
+    qdo(mq2, qu=q, plot, select=1, cex.lab=3, labcex=1.2)})
+v = sapply(qns, function(q){
+    qdo(mq2, qu=q, plot, select=2, cex.lab=3, labcex=1.2)})
+```

@@ -17,24 +17,25 @@ def plot_ECs_50(U, fig_path):
 
 def main(args):
     ref_font = "hei"
-    font_list = ["kai", "shao", "li", "xing"]
+    font_list = ["hei", "kai", "shao", "li", "xing"]
     hei_svd = eigenform.make_svd("hei")
 
     ec_path = eigenform.get_data_dir() / f"svd/ec50_hei.png"
     plot_ECs_50(hei_svd[0], ec_path)
     for font_x in tqdm(font_list):
         svd_x = eigenform.make_svd(font_x)
-        align_svd_x, supp = eigenform.align_space(svd_x, hei_svd, args.n_components)
-        out_svd_path = eigenform.get_data_dir() / f"svd/align_svd_{font_x}.pkl"
+        align_space_x, supp = eigenform.align_space(svd_x, hei_svd, args.n_components)
+        out_svd_path = eigenform.get_data_dir() / f"svd/align_space_{font_x}.pkl"
         ec_path = eigenform.get_data_dir() / f"svd/ec50_{font_x}.png"
         align_ec_path = eigenform.get_data_dir() / f"svd/align_ec50_{font_x}.png"
         with out_svd_path.open("wb") as fout:
             pickle.dump({
-                "align_svd_tuple": align_svd_x,
+                "align_bases": align_space_x["bases"],
+                "align_coeff": align_space_x["coeff"],
                 "align_mat": supp["ortho"]
             }, fout)
         plot_ECs_50(svd_x[0], ec_path)
-        plot_ECs_50(align_svd_x[0], align_ec_path)
+        plot_ECs_50(align_space_x["bases"], align_ec_path)
 
 if __name__ == "__main__":
     parser = ArgumentParser()
